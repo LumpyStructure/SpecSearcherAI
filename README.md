@@ -55,7 +55,7 @@ SpecSearcherAI is a Retrieval-Augmented Generation (RAG) tool that allows users 
 
 2. Open your browser and navigate to `http://localhost:8000`
 
-3. Ask questions about the indexed educational materials
+3. Ask questions about the indexed materials
 
 ## Architecture
 
