@@ -1,7 +1,9 @@
 from typing import cast, Dict, Optional
 import chainlit as cl
 import os
+import sqlite3
 from chainlit.types import ThreadDict
+from chainlit.input_widget import Select
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.base import Response
 from autogen_core import CancellationToken
@@ -24,14 +26,35 @@ def oauth_callback(
     return default_user
 
 
+async def get_collections():
+    connection = sqlite3.connect("C:/Users/frase/.chromadb_autogen/chroma.sqlite3")
+    cursor = connection.cursor()
+    cursor.execute("SELECT name FROM collections")
+    names = cursor.fetchall()
+    connection.close()
+    return [name[0] for name in names]
+
+
+async def select_folder():
+    names = await get_collections()
+    rag_select = await cl.AskActionMessage(
+        content="Select documents",
+        actions=[
+            cl.Action(name=name, payload={"value": name}, label=name) for name in names
+        ],
+    ).send()
+
+    return rag_select.get("payload").get("value")
+
+
 @cl.on_chat_start
 async def startup():
-    # load_dotenv()
+    folder_name = await select_folder()
 
     assistant = AssistantAgent(
         name="rag_assistant",
         model_client=get_azure_openai_client(),
-        memory=[await initialise_vector_memory()],
+        memory=[await initialise_vector_memory(folder_name)],
         system_message=os.getenv("SYSTEM_MESSAGE"),
         model_client_stream=True,
     )
@@ -59,7 +82,9 @@ async def main(message: cl.Message):
 
 @cl.on_chat_resume
 async def on_chat_resume(thread: ThreadDict):
-    rag_memory = await initialise_vector_memory()
+    folder_name = await select_folder()
+
+    rag_memory = await initialise_vector_memory(folder_name)
     user_memory = ListMemory()
 
     root_messages = [m for m in thread["steps"] if m["parentId"] == None]

@@ -43,11 +43,11 @@ async def index_docs(rag_memory: ChromaDBVectorMemory) -> None:
     print(f"Indexed {chunks} chunks from {len(sources)} documents")
 
 
-async def initialise_vector_memory():
+async def initialise_vector_memory(folder_name):
     # Initialize vector memory
     rag_memory = ChromaDBVectorMemory(
         config=PersistentChromaDBVectorMemoryConfig(
-            collection_name="comp_sci_docs",
+            collection_name=folder_name,
             persistence_path=os.path.join(str(Path.home()), ".chromadb_autogen"),
             k=10,  # Return top 10 results
             score_threshold=0.4,  # Minimum similarity score
