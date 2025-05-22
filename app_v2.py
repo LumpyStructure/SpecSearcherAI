@@ -25,14 +25,14 @@ def oauth_callback(
 
 @cl.on_chat_start
 async def startup():
-    load_dotenv()
+    # load_dotenv()
 
     assistant = AssistantAgent(
         name="rag_assistant",
         model_client=get_azure_openai_client(),
-        memory=[initialise_vector_memory()],
+        memory=[await initialise_vector_memory()],
         system_message="""You are a helpful AI Assistant.
-        The files you have been provided with contains information for a computer science course.
+        The files you have been provided with contains information about a court case.
         When given a user query, use these files to help the user with their request.
         If you cannot find the answer in the files, respond that it is not part of the course.""",
         model_client_stream=True,
@@ -61,24 +61,26 @@ async def main(message: cl.Message):
 
 @cl.on_chat_resume
 async def on_chat_resume(thread: ThreadDict):
-    rag_memory = initialise_vector_memory()
+    rag_memory = await initialise_vector_memory()
     user_memory = ListMemory()
 
     root_messages = [m for m in thread["steps"] if m["parentId"] == None]
     for message in root_messages:
         if message["type"] == "user_message":
-            await user_memory.add(MemoryContent(content=message["output"], mime_type=MemoryMimeType.TEXT))
+            await user_memory.add(
+                MemoryContent(content=message["output"], mime_type=MemoryMimeType.TEXT)
+            )
         else:
             await user_memory.add(
                 MemoryContent(content=message["output"], mime_type=MemoryMimeType.TEXT)
             )
-    
+
     assistant = AssistantAgent(
         name="rag_assistant",
         model_client=get_azure_openai_client(),
         memory=[rag_memory, user_memory],
         system_message="""You are a helpful AI Assistant.
-        The files you have been provided with contains information for a computer science course.
+        The files you have been provided with contains information about a court case.
         When given a user query, use these files to help the user with their request.
         If you cannot find the answer in the files, respond that it is not part of the course.""",
         model_client_stream=True,
@@ -91,4 +93,5 @@ async def on_chat_resume(thread: ThreadDict):
 if __name__ == "__main__":
     from chainlit.cli import run_chainlit
 
+    load_dotenv()
     run_chainlit(__file__)

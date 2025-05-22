@@ -28,17 +28,14 @@ def get_azure_openai_client(model=None, max_tokens=3000, temperature=0, seed=42)
     )
 
 
-async def index_docs() -> None:
+async def index_docs(rag_memory) -> None:
     indexer = SimpleDocumentIndexer(memory=rag_memory, chunk_size=1000)
-    sources = [
-        r"C:\Users\frase\OneDrive\Documents\RINA work experience\AI Agents\specifications\AQA-7516-7517-SP-2015.PDF",
-        r"C:\Users\frase\OneDrive\Documents\RINA work experience\AI Agents\specifications\PG A Level  Computer Science.pdf",
-    ]
+    sources = [os.getenv("RAG_SOURCES")]
     chunks: int = await indexer.index_documents(sources)
     print(f"Indexed {chunks} chunks from {len(sources)} documents")
 
 
-def initialise_vector_memory():
+async def initialise_vector_memory():
     # Initialize vector memory
     rag_memory = ChromaDBVectorMemory(
         config=PersistentChromaDBVectorMemoryConfig(
@@ -48,26 +45,27 @@ def initialise_vector_memory():
             score_threshold=0.4,  # Minimum similarity score
         )
     )
-    # # Uncomment the following lines to re-index documents
-    # await rag_memory.clear()  # Clear existing memory
-    # print("Indexing documents...")
-    # rag_memory = await index_docs()
 
     return rag_memory
 
 
-load_dotenv()
-# Initialize the vector memory
-rag_memory = initialise_vector_memory()
+async def main():
+    load_dotenv()
+    # Initialize the vector memory
+    rag_memory = await initialise_vector_memory()
 
-# Create our RAG assistant agent
-rag_assistant = AssistantAgent(
-    name="rag_assistant",
-    model_client=get_azure_openai_client(),
-    memory=[rag_memory],
-    system_message="""You are a helpful AI Assistant.
-    The files you have been provided with contains information for a computer science course.
-    When given a user query, use these files to help the user with their request.
-    If you cannot find the answer in the files, respond that it is not part of the course.""",
-    model_client_stream=True,
-)
+    # Create our RAG assistant agent
+    rag_assistant = AssistantAgent(
+        name="rag_assistant",
+        model_client=get_azure_openai_client(),
+        memory=[rag_memory],
+        system_message="""You are a helpful AI Assistant.
+        The files you have been provided with contains information for a computer science course.
+        When given a user query, use these files to help the user with their request.
+        If you cannot find the answer in the files, respond that it is not part of the course.""",
+        model_client_stream=True,
+    )
+
+
+if __name__ == "__main__":
+    main()
