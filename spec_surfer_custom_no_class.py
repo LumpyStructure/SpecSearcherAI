@@ -28,9 +28,17 @@ def get_azure_openai_client(model=None, max_tokens=3000, temperature=0, seed=42)
     )
 
 
-async def index_docs(rag_memory) -> None:
+async def index_docs(rag_memory: ChromaDBVectorMemory) -> None:
+    await rag_memory.clear()
     indexer = SimpleDocumentIndexer(memory=rag_memory, chunk_size=1000)
-    sources = [os.getenv("RAG_SOURCES")]
+    source_file = os.getenv("RAG_SOURCES")
+    # Get only the file names in the directory
+    sources = [
+        os.path.join(dirpath, f)
+        for (dirpath, dirnames, filenames) in os.walk(source_file)
+        for f in filenames
+    ]
+    print(f"Indexing documents...")
     chunks: int = await indexer.index_documents(sources)
     print(f"Indexed {chunks} chunks from {len(sources)} documents")
 
