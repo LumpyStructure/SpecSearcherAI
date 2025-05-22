@@ -67,10 +67,7 @@ async def main():
         name="rag_assistant",
         model_client=get_azure_openai_client(),
         memory=[rag_memory],
-        system_message="""You are a helpful AI Assistant.
-        The files you have been provided with contains information for a computer science course.
-        When given a user query, use these files to help the user with their request.
-        If you cannot find the answer in the files, respond that it is not part of the course.""",
+        system_message=os.getenv("SYSTEM_MESSAGE"),
         model_client_stream=True,
     )
 

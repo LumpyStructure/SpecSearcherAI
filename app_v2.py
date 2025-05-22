@@ -1,5 +1,6 @@
 from typing import cast, Dict, Optional
 import chainlit as cl
+import os
 from chainlit.types import ThreadDict
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.base import Response
@@ -31,10 +32,7 @@ async def startup():
         name="rag_assistant",
         model_client=get_azure_openai_client(),
         memory=[await initialise_vector_memory()],
-        system_message="""You are a helpful AI Assistant.
-        The files you have been provided with contains information about a court case.
-        When given a user query, use these files to help the user with their request.
-        If you cannot find the answer in the files, respond that it is not part of the course.""",
+        system_message=os.getenv("SYSTEM_MESSAGE"),
         model_client_stream=True,
     )
     # Set the assistant agent in the user session.
@@ -79,10 +77,7 @@ async def on_chat_resume(thread: ThreadDict):
         name="rag_assistant",
         model_client=get_azure_openai_client(),
         memory=[rag_memory, user_memory],
-        system_message="""You are a helpful AI Assistant.
-        The files you have been provided with contains information about a court case.
-        When given a user query, use these files to help the user with their request.
-        If you cannot find the answer in the files, respond that it is not part of the course.""",
+        system_message=os.getenv("SYSTEM_MESSAGE"),
         model_client_stream=True,
     )
 
