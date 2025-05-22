@@ -1,0 +1,8 @@
+.env
+Old_files/*
+chainlit-datalayer/*
+.vscode/*
+__pycache__/*
+.chainlit/*
+.venv/*
+specifications/*
