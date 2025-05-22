@@ -5,4 +5,4 @@ chainlit-datalayer/*
 __pycache__/*
 .chainlit/*
 .venv/*
-specifications/*
+sources/*
