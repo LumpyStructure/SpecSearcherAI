@@ -39,14 +39,22 @@ async def get_collections():
 
 async def select_folder():
     names = await get_collections()
-    rag_select = await cl.AskActionMessage(
-        content="Select documents",
-        actions=[
-            cl.Action(name=name, payload={"value": name}, label=name) for name in names
-        ],
+    settings = await cl.ChatSettings(
+        [
+            Select(
+                id="rag_select",
+                label="Select documents",
+                items={name.replace("_", " "): name for name in names},
+                initial_value=names[0],
+            )
+        ]
     ).send()
+    return settings["rag_select"]
 
-    return rag_select.get("payload").get("value")
+
+@cl.on_settings_update
+async def update_settings(settings: Dict[str, str]):
+    await get_memory(settings["rag_select"])
 
 
 @cl.on_chat_start
@@ -87,19 +95,7 @@ async def main(message: cl.Message):
 async def on_chat_resume(thread: ThreadDict):
     folder_name = await select_folder()
 
-    rag_memory = await initialise_vector_memory(folder_name)
-    user_memory = ListMemory()
-
-    root_messages = [m for m in thread["steps"] if m["parentId"] == None]
-    for message in root_messages:
-        if message["type"] == "user_message":
-            await user_memory.add(
-                MemoryContent(content=message["output"], mime_type=MemoryMimeType.TEXT)
-            )
-        else:
-            await user_memory.add(
-                MemoryContent(content=message["output"], mime_type=MemoryMimeType.TEXT)
-            )
+    rag_memory, user_memory = await get_memory(folder_name, thread)
 
     assistant = AssistantAgent(
         name="rag_assistant",
@@ -111,7 +107,30 @@ async def on_chat_resume(thread: ThreadDict):
 
     # Set the assistant agent in the user session.
     cl.user_session.set("memory", assistant._memory)
-    cl.user_session.set("agent", assistant)  # type: ignore
+    cl.user_session.set("agent", assistant)
+
+
+async def get_memory(folder_name, thread=None):
+    rag_memory = await initialise_vector_memory(folder_name)
+    user_memory = ListMemory()
+
+    if thread is not None:
+        root_messages = [m for m in thread["steps"] if m["parentId"] == None]
+        for message in root_messages:
+            if message["type"] == "user_message":
+                await user_memory.add(
+                    MemoryContent(
+                        content=message["output"], mime_type=MemoryMimeType.TEXT
+                    )
+                )
+            else:
+                await user_memory.add(
+                    MemoryContent(
+                        content=message["output"], mime_type=MemoryMimeType.TEXT
+                    )
+                )
+
+    return (rag_memory, user_memory)  # type: ignore
 
 
 if __name__ == "__main__":

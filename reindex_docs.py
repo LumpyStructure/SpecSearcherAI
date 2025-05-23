@@ -9,7 +9,8 @@ async def main():
     rag_memory = await initialise_vector_memory(
         os.path.normpath(os.getenv("RAG_SOURCES")).split(os.sep)[-1]
     )
-    rag_memory = await index_docs(rag_memory)
+    chunk_size = int(os.getenv("CHUNK_SIZE", 1000))
+    rag_memory = await index_docs(rag_memory, chunk_size)
     return rag_memory
 
 
