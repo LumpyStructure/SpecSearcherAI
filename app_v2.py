@@ -13,6 +13,8 @@ from spec_surfer_custom_no_class import (
     get_azure_openai_client,
     initialise_vector_memory,
 )
+from ollama_integration import get_ollama_client
+from gemini_integration import get_gemini_client
 from dotenv import load_dotenv
 
 
@@ -53,11 +55,12 @@ async def startup():
 
     assistant = AssistantAgent(
         name="rag_assistant",
-        model_client=get_azure_openai_client(),
+        model_client=get_gemini_client(),  # Replace as appropriate
         memory=[await initialise_vector_memory(folder_name)],
         system_message=os.getenv("SYSTEM_MESSAGE"),
         model_client_stream=True,
     )
+
     # Set the assistant agent in the user session.
     cl.user_session.set("prompt_history", "")  # type: ignore
     cl.user_session.set("agent", assistant)  # type: ignore
@@ -100,12 +103,13 @@ async def on_chat_resume(thread: ThreadDict):
 
     assistant = AssistantAgent(
         name="rag_assistant",
-        model_client=get_azure_openai_client(),
+        model_client=get_gemini_client(),  # Replace as appropriate
         memory=[rag_memory, user_memory],
         system_message=os.getenv("SYSTEM_MESSAGE"),
         model_client_stream=True,
     )
 
+    # Set the assistant agent in the user session.
     cl.user_session.set("memory", assistant._memory)
     cl.user_session.set("agent", assistant)  # type: ignore
 
