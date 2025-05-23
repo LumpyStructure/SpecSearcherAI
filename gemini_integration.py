@@ -13,6 +13,7 @@ def get_gemini_client(model=None, max_tokens=3000, temperature=0):
             "family": model if model else os.getenv("MODEL"),
             "function_calling": False,
             "json_output": False,
+            "structured_output": False,
             "vision": False,
             "multiple_system_messages": True,
         },
